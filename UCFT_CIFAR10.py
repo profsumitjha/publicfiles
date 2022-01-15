@@ -18,7 +18,8 @@ import datetime
 from torch.autograd import Variable
 
 from typing import Optional
-from art.classifiers import PyTorchClassifier
+#from art.classifiers import PyTorchClassifier
+from art.estimators.classification.pytorch import PyTorchClassifier
 
 from resnet import ResNet18 as resnet18
 
