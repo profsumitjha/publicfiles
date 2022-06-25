@@ -32,7 +32,8 @@ def get_art_model(
 
     model = resnet50() 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.load_state_dict(torch.load(weights_path))
+    checkpoint = torch.load(weights_path)
+    model.load_state_dict(checkpoint['model'])
     model.to(DEVICE)
     cudnn.benchmark = True
     wrapped_model = PyTorchClassifier(
