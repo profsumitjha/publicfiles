@@ -174,7 +174,7 @@ class ResNet(nn.Module):
         out_store1 = []
         layer_number = 0
 
-        out = self.conv1(x1)
+        out = self.conv1(x)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
