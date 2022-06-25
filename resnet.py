@@ -8,8 +8,48 @@ import numpy as np
 
 import copy
 
+__all__ = ['ResNet18', 'ResNet50']
 
-__all__ = ['ResNet18']
+import torch
+import torch.nn as nn
+from torch.nn import functional as F
+
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.distributions.multivariate_normal import MultivariateNormal
+
+import random
+import numpy as np 
+
+import copy
+import torchmetrics
+
+
+C_DIM=10
+C_Start_Layer=4000
+feature_store=[]
+out_store=[]
+feature_store1=[]
+out_store1=[]
+layer_number=0
+out_store_tmp=[]
+is_first_input=1
+noise_threshold1=0.51
+noise_threshold2=0.0001
+noise_threshold3=0.0001
+noise_ratio = 1.0
+noise_increment=0.5
+
+
+
+def perturb_inp(x):
+    return x
+
+def perturb(x):
+    return x
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -28,12 +68,20 @@ class BasicBlock(nn.Module):
 
 
     def forward(self, x):
+        global feature_store
+        global layer_number
+        global out_store
+        global out_store1
+        global is_first_input
+        layer_number=layer_number+1
 
         out = F.relu(self.bn1(x))
         shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
         out = self.conv1(out)
         out = self.conv2(F.relu(self.bn2(out)))
 
+        if is_first_input==0:
+            out = perturb(out, layer_number)
         out += shortcut
         return out
 
@@ -56,20 +104,36 @@ class Bottleneck(nn.Module):
             )
 
     def forward(self, x):
+        global feature_store
+        global layer_number
+        global out_store
+        global out_store1
+        global is_first_input
+        layer_number=layer_number+1
+
+
         out = F.relu(self.bn1(x))
         shortcut = self.shortcut(out) if hasattr(self, 'shortcut') else x
         out = self.conv1(out)
         out = self.conv2(F.relu(self.bn2(out)))
         out = self.conv3(F.relu(self.bn3(out)))
 
+
+        if is_first_input==0:
+            out = perturb(out, layer_number)
         out += shortcut
         return out
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks, num_classes):
+    def __init__(self, block, num_blocks, num_classes, n_threshold1, n_threshold2, n_threshold3, n_increment, n_ratio):
         super(ResNet, self).__init__()
         self.in_planes = 64
+        self.n_threshold1 = n_threshold1
+        self.n_threshold2 = n_threshold2
+        self.n_threshold3 = n_threshold3
+        self.n_increment = n_increment
+        self.n_ratio = n_ratio
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
@@ -87,9 +151,42 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = x.permute(0, 3, 1, 2)
-        x1=x
-        out = self.conv1(x1) 
+        global feature_store
+        global layer_number
+        global out_store
+        global feature_store1
+        global out_store1
+        global is_first_input
+        global noise_threshold1
+        global noise_threshold2
+        global noise_threshold3
+        global noise_ratio 
+        global noise_increment
+        noise_threshold1 = self.n_threshold1
+        noise_threshold2 = self.n_threshold2
+        noise_threshold2 = self.n_threshold3
+        noise_increment = self.n_increment
+        noise_ratio = self.n_ratio
+
+        is_first_input=0
+        feature_store = []
+        out_store = []
+        feature_store1 = []
+        out_store1 = []
+        layer_number = 0
+
+        if random.random()<1.01:
+            x1=perturb_inp(x)
+            count_perturb=0
+            while torchmetrics.functional.regression.ssim(x,x1)<0.7:
+                count_perturb=count_perturb+1
+                if count_perturb>100:
+                    break
+                x1=perturb_inp(x)
+        else:
+            x1=x
+
+        out = self.conv1(x1)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
@@ -99,13 +196,32 @@ class ResNet(nn.Module):
         outf = self.linear(out)
         feature = outf
 
-        return outf
+
+        return out_store, feature_store, feature, outf
 
 
-def ResNet18(classes=10):
-    return ResNet(BasicBlock, [2, 2, 2, 2], num_classes=classes)
+def ResNet18(classes=10, noise_threshold1=0, noise_threshold2=0, noise_threshold3=0, noise_increment=0, noise_ratio=0):
+    return ResNet(BasicBlock, [2, 2, 2, 2], num_classes=classes, n_threshold1=noise_threshold1, n_threshold2=noise_threshold2, n_threshold3=noise_threshold3, n_increment=noise_increment, n_ratio=noise_ratio)
 
-def ResNet50(classes=10):
-    return ResNet(Bottleneck, [3, 4, 6, 3], num_classes=classes)
+
+def ResNet34():
+    return ResNet(BasicBlock, [3, 4, 6, 3])
+
+
+def ResNet50(classes=10, noise_threshold1=0, noise_threshold2=0, noise_threshold3=0, noise_increment=0, noise_ratio=0):
+    return ResNet(Bottleneck, [3, 4, 6, 3], num_classes=classes, n_threshold1=noise_threshold1, n_threshold2=noise_threshold2, n_threshold3=noise_threshold3, n_increment=noise_increment, n_ratio=noise_ratio)
+
+
+def ResNet101():
+    return ResNet(Bottleneck, [3, 4, 23, 3])
+
+
+def ResNet152(): 
+    return ResNet(Bottleneck, [3, 8, 36, 3])
+
+
+def ResNet1202():
+    return ResNet(BasicBlock, [50, 50, 50, 3])
+
 
 
