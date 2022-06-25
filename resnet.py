@@ -187,7 +187,7 @@ class ResNet(nn.Module):
         feature = outf
 
 
-        return out_store, feature_store, feature, outf
+        return outf
 
 
 def ResNet18(classes=10, noise_threshold1=0, noise_threshold2=0, noise_threshold3=0, noise_increment=0, noise_ratio=0):
