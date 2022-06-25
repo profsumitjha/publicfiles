@@ -21,7 +21,7 @@ from typing import Optional
 
 from art.estimators.classification.pytorch import PyTorchClassifier
 
-from resnet import ResNet18 as resnet18
+from resnet import ResNet50 as resnet50
 
 
 
@@ -30,7 +30,7 @@ def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchClassifier:
 
-    model = resnet18() 
+    model = resnet50() 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.load_state_dict(torch.load(weights_path))
     model.to(DEVICE)
