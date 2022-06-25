@@ -174,17 +174,6 @@ class ResNet(nn.Module):
         out_store1 = []
         layer_number = 0
 
-        if random.random()<1.01:
-            x1=perturb_inp(x)
-            count_perturb=0
-            while torchmetrics.functional.regression.ssim(x,x1)<0.7:
-                count_perturb=count_perturb+1
-                if count_perturb>100:
-                    break
-                x1=perturb_inp(x)
-        else:
-            x1=x
-
         out = self.conv1(x1)
         out = self.layer1(out)
         out = self.layer2(out)
