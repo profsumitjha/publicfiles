@@ -25,7 +25,6 @@ import random
 import numpy as np 
 
 import copy
-import torchmetrics
 
 
 C_DIM=10
