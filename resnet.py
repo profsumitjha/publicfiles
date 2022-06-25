@@ -150,6 +150,8 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+        x = x.permute(0, 3, 1, 2)
+        
         global feature_store
         global layer_number
         global out_store
